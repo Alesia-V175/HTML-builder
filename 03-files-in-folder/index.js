@@ -12,11 +12,13 @@ fs.readdir(folderPath, {withFileTypes: true}, (error, items) => {
         if(file.isFile()) {
             let nameFile = file.name;
             let nameFileArray = nameFile.split(".");
-            nameFileArray.splice(nameFileArray.length - 1, 1).join("");
+            if (nameFileArray.length === 1) {
+                nameFileArray = nameFile;
+            } else {
+                nameFileArray.splice(nameFileArray.length - 1, 1).join("");
+            }
 
-            let formatFile = path.extname(nameFile);
-
-            let formatFileArray = formatFile.split(".")[1];
+            let formatFileArray = nameFile.split(".")[1];
 
             fs.stat(__dirname + "/secret-folder/" + nameFile,  (err, stats) => {
                 console.log(nameFileArray + " - " + formatFileArray + " - " + stats.size / 1000 + "kb");
