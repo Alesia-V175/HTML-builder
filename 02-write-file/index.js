@@ -12,8 +12,11 @@ function question() {
             return;
         }
         console.log(`Thank you for your quote: ${answer}`);
-        fs.readFile("newTextFile.txt", 'utf8', function(error, fileContent){
-            fs.promises.writeFile("newTextFile.txt", fileContent + answer + "\n")
+        fs.readFile(__dirname + "/newTextFile.txt", 'utf8', function(error, fileContent){
+            if(error) {
+                fileContent = "";
+            }
+            fs.promises.writeFile(__dirname + "/newTextFile.txt", fileContent + answer + "\n")
         })
         question();
     })
