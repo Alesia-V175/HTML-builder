@@ -6,6 +6,7 @@ const stylesFolder = __dirname + "/styles";
 const assetsFolder = __dirname + "/assets";
 const assetsProjectDistFolder = projectFolder + "/assets";
 const templateHtmlFile = __dirname + "/template.html";
+const componentsFolder = __dirname + "/components";
 
 fs.mkdir(projectFolder, { recursive: true }, (error) => {
     if (error) {
@@ -15,15 +16,7 @@ fs.mkdir(projectFolder, { recursive: true }, (error) => {
 
     let currentFile = fs.createReadStream(templateHtmlFile, 'utf8');
     currentFile.on('data', (data) => {
-        fs.readFile(projectFolder + "/index.html", 'utf8', function(error, fileContent){
-            if(error) {
-                fileContent = "";
-            }
-
-            fs.unlink(projectFolder + "/index.html", (err) => {});
-
-            fs.promises.writeFile(projectFolder + "/index.html", fileContent + data);
-        })
+        templateReplaceString(data);
     })
 
     fs.readdir(stylesFolder, {withFileTypes: true}, (error, items) => {
@@ -32,17 +25,17 @@ fs.mkdir(projectFolder, { recursive: true }, (error) => {
             throw error;
         }
 
-        fs.unlink(projectFolder + "/style.css", (err) => {});
+        fs.unlink(projectFolder + "/style.css", (err) => {
+            items = items
+                .filter(file => file.isFile())
+                .filter(file => {
+                    let fileFormat = path.extname(file.name).split(".")[1];
+                    return fileFormat === "css";
+                })
 
-        items = items
-            .filter(file => file.isFile())
-            .filter(file => {
-                let fileFormat = path.extname(file.name).split(".")[1];
-                return fileFormat === "css";
-            })
-
-        readStyleFiles(items, 0);
-        console.log("Create styles file");
+            readStyleFiles(items, 0);
+            console.log("Create styles file");
+        });
     })
 
     fs.readdir(assetsFolder, {withFileTypes: true}, (error, items) => {
@@ -97,5 +90,23 @@ function readStyleFiles(items, position) {
             fs.promises.writeFile(projectFolder + "/style.css", fileContent + data);
             readStyleFiles(items, ++position);
         })
+    })
+}
+
+function templateReplaceString(data) {
+    let leftIndex = data.indexOf("{{");
+    let rightIndex = data.indexOf("}}");
+    if(leftIndex === -1 || rightIndex === -1) {
+        fs.unlink(projectFolder + "/index.html", (err) => {
+            fs.promises.writeFile(projectFolder + "/index.html", data);
+        });
+        return;
+    }
+    let componentName = data.slice(leftIndex + 2, rightIndex);
+
+    let componentFile = fs.createReadStream(componentsFolder + "/" + componentName + ".html", 'utf8');
+    componentFile.on('data', (value) => {
+        data = data.replace("{{" + componentName + "}}", value);
+        templateReplaceString(data);
     })
 }
